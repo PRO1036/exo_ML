@@ -1,0 +1,166 @@
+---
+autor: "Tim Bollé"
+title: "Exercice - Regression"
+---
+
+L'objectif de cet exercice est de mettre en pratique les notions de régression linéaire simple et multiple. Pour cela, nous allons utiliser un jeu de données qui contient des informations sur différentes voitures.
+
+Nous allons essayer de prédire le prix d'une voiture en fonction de ses caractéristiques.
+
+Nous allons utiliser les packages suivants :
+
+```{r}
+library(tidyverse)
+library(tidymodels)
+```
+
+
+# Regression linéaire
+
+## Importation des données
+
+Commencez par importer les données du fichier `cars.csv`. Faites attention que le délimiteur est un point-virgule `;`. Il faut donc utiliser la fonction `read_delim()` du package `readr`.
+
+
+```{r}
+# Votre code ici
+```
+
+## Analyse exploratoire
+
+Affichez un résumé des données pour mieux comprendre leur structure.
+
+Vous pouvez également visualiser le prix en fonction de différents paramètres.
+
+## Régression linéaire simple
+
+Entraînez un modèle de régression linéaire simple pour prédire le prix en fonction de la puissance (`horsepower`) de la voiture.
+
+Créez une variable `cars_fit` qui contient le modèle entraîné.
+
+```{r}
+# Votre code ici
+```
+
+## Évaluation du modèle
+
+Nous allons commencer par visualiser notre regression linéaire simple. Représentez le prix en fonction de la puissance par un nuage de points avec la droite de régression.
+
+```{r}
+# Votre code ici
+```
+
+
+Affichez maintenant un résumé des coefficients du modèle à l'aide de la fonction `tidy()`.
+
+Comment les interprétez-vous ?
+
+Nous pouvons également estimer la qualité de la prédiction en calculant le coefficient de détermination $R^2$. Pour cela, nous pouvons utiliser `glance()` sur notre modèle.
+
+Comment jugez-vous la qualité de la prédiction ?
+
+## Prédiction sur des données de test
+
+Importez le fichier `cars_test.csv` et utilisez votre modèle pour prédire le prix des voitures.
+
+Pour cela, vous pouvez utiliser la fonction `predict()`. Cela devrait ressembler à ceci :
+
+```{r}
+cars_fit %>%
+  predict(new_data = cars_test) %>%
+  bind_cols(cars_test) # On joint le tableau complet avec les prédictions
+```
+
+Dans ce bloc de code, nous avons utilisé notre modèle entrainé pour prédire les prix des voitures dans le jeu de données `cars_test`. Nous avons ensuite joint les données prédites avec les données originales pour les comparer. Vous pouvez essayer de rouler le code en enlevant la dernière ligne pour voir ce que cela donne.
+
+Nous voulons comparer les prix prédits avec les prix réels. Pour cela, nous allons calculer l'erreur quadratique moyenne (RMSE) entre les deux et le $R^2$ de la prédiction. Pour cela, stockez le résultat du bloc précédent dans une variable `cars_pred` et utilisez la fonction `metrics`. Aidez vous de l'aide `?metrics` pour comprendre comment l'utiliser.
+
+Nous voulons également visuliser les prédictions. Pour cela, plottez le prix prédit en fonction du prix réel.
+
+## Regression multiple
+
+Nous allons maintenant essayer de prédire le prix en fonction de plusieurs variables. Entraînez un modèle de régression linéaire multiple pour prédire le prix en fonction de la puissance (`horsepower`) et de la cylindrée (`enginesize`) de la voiture.
+
+Créez une variable `cars_fit_multi` qui contient le modèle entraîné. Adaptez la formule de regression pour tenir compte des deux variables.
+
+
+Reproduisez les étapes précédentes pour évaluer ce modèle. Affichez un résumé des coefficients, le $R^2$ et les prédictions sur les données de test.
+
+
+# Régression complète avec Random Forest
+
+Nous allons maintenant essayer de prendre en compte toutes les variables pour prédire le prix des voitures. Pour cela, nous allons utiliser un modèle de Random Forest.
+
+Nous allons commencer par définir notre modèle. Créez une variable `rf_mod` qui contient un modèle de Random Forest avec 1000 arbres. Pour faire simple, nous allons laisser les autres paramètres par défaut. Nous réglons le modèle pour faire de la regression (ce modèle peut également servir à faire de la classification).
+
+```{r}
+cores <- parallel::detectCores() # Pour accélérer les calculs
+
+rf_mod <- 
+  rand_forest(trees = 1000) %>% 
+  set_engine("ranger", num.threads = cores) %>% 
+  set_mode("regression")
+```
+
+
+Comme nos données contiennent des variables catégorielles, nous devons les transformer en variables numériques. Pour cela, nous allons utiliser la fonction `recipe()` du package `recipes`. Créez une variable `rf_recipe` qui contient une recette pour transformer les variables catégorielles en variables numériques. Pour cela, vous pouvez utiliser la fonction `step_dummy()` qui sera appliquée à toutes les variables catégorielles (`all_nominal_predictors()`). Assurez vous que la formule permettent de représenter le `price` en fonction de toutes les variables de `cars`.
+
+```{r eval=FALSE}
+rf_recipe <- 
+  recipe(____) %>% 
+  step_XXXX(______) 
+```
+
+
+Enfin, nous allons combiner notre modèle et notre recette dans un workflow. Créez une variable `rf_workflow` qui contient un workflow avec notre recette et notre modèle.
+
+```{r eval=FALSE}
+rf_workflow <- 
+  # Votre code ici
+```
+
+Nous pouvons maintenant fitter notre modèle sur les données. Utilisez la fonction `fit()` sur votre workflow pour entraîner le modèle.
+
+```{r eval=FALSE}
+rf_fit <- rf_workflow %>% 
+  # Votre code ici
+```
+
+Pour voire les résultats du Random Forest, nous pouvons utiliser la fonction `extract_fit_parsnip()` sur notre modèle.
+
+
+```{r eval=FALSE}
+rf_fit %>% 
+  extract_fit_parsnip()
+```
+
+
+Comment interprétez-vous ces résultats ?
+
+Enfin, nous allons prédire les prix des voitures sur les données de test. Pour cela, utilisez la fonction `predict()` sur votre modèle. Stockez le résultat dans une variable `rf_pred` et affichez un résumé des prédictions. Nous pouvons utiliser ici les mêmes fonctions et les mêmes syntaxes que pour la régression linéaire.
+
+```{r}
+# Votre code ici
+```
+
+
+Affichez les résutlats de la fonction `metrics()` pour évaluer la qualité de la prédiction. Vous pouvez également visualiser les prédictions en fonction des prix réels.
+
+
+# Regression linéaire complète
+
+Vous pouvez refaire les étapes précédentes avec un modèle de régression linéaire multiple en prenant en compte toutes les variables. Vous pouvez utiliser la même recette que pour le Random Forest, en utilisant le modèle de régression linéaire multiple suivant:
+
+```{r}
+lm_mod <- 
+  linear_reg() %>% 
+  set_engine("lm") %>% 
+  set_mode("regression") # optionnel
+```
+
+Par rapport à la régression linéaire simple, l'important est d'utiliser un recette pour transformer les variables catégorielles en variables numériques.
+
+Comment se comparent les résultats de la régression linéaire multiple et du Random Forest ? Et avec la régression linéaire simple ?
+
+
+
